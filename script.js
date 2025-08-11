@@ -70,42 +70,48 @@ document.addEventListener('DOMContentLoaded', function() {
     // Counter animation for hero stats
     function animateCounters() {
         const counters = document.querySelectorAll('.stat-number');
-        const speed = 200; // Animation speed
 
         counters.forEach(counter => {
-            const updateCounter = () => {
-                const target = parseInt(counter.getAttribute('data-target')) || 
-                              parseInt(counter.textContent.replace(/\D/g, ''));
-                const count = parseInt(counter.textContent.replace(/\D/g, '')) || 0;
-                
-                // Set target if not already set
-                if (!counter.getAttribute('data-target')) {
-                    counter.setAttribute('data-target', target);
-                }
-
-                const increment = target / speed;
-
-                if (count < target) {
-                    const newCount = Math.ceil(count + increment);
-                    const suffix = counter.textContent.replace(/\d/g, '');
-                    counter.textContent = newCount + suffix;
-                    setTimeout(updateCounter, 1);
-                } else {
-                    const suffix = counter.textContent.replace(/\d/g, '');
-                    counter.textContent = target + suffix;
-                }
-            };
+            // Get the final value and detect if it has + or % suffix
+            const originalText = counter.textContent;
+            let targetValue = 0;
+            let suffix = '';
+            
+            if (originalText.includes('850+')) {
+                targetValue = 850;
+                suffix = '+';
+            } else if (originalText.includes('15+')) {
+                targetValue = 15;
+                suffix = '+';
+            } else if (originalText.includes('99%')) {
+                targetValue = 99;
+                suffix = '%';
+            }
 
             // Start animation when element comes into view
             const counterObserver = new IntersectionObserver(function(entries) {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !counter.classList.contains('animated')) {
                         counter.classList.add('animated');
-                        counter.textContent = '0' + counter.textContent.replace(/\d/g, '');
-                        updateCounter();
+                        
+                        let current = 0;
+                        const increment = targetValue / 100; // Slower animation
+                        
+                        const updateCounter = () => {
+                            current += increment;
+                            if (current < targetValue) {
+                                counter.textContent = Math.ceil(current) + suffix;
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counter.textContent = targetValue + suffix;
+                            }
+                        };
+                        
+                        counter.textContent = '0' + suffix;
+                        setTimeout(updateCounter, 500); // Start after a delay
                     }
                 });
-            }, { threshold: 0.5 });
+            }, { threshold: 0.3 });
 
             counterObserver.observe(counter);
         });
